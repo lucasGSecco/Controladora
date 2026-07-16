@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uniserv Voucher App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Vouchers de Internet</h1>
+      <p class="subtitle">Gerenciamento via UniFi Network Application</p>
+    </header>
+
+    <section class="card">
+      <h2>Gerar novo voucher</h2>
+      <form id="voucher-form">
+        <div class="form-row">
+          <label for="minutes">Validade (minutos)</label>
+          <input type="number" id="minutes" min="1" value="480" required>
+        </div>
+
+        <div class="form-row">
+          <label for="count">Quantidade</label>
+          <input type="number" id="count" min="1" value="1" required>
+        </div>
+
+        <div class="form-row">
+          <label for="usageLimit">Uso</label>
+          <select id="usageLimit">
+            <option value="1">Uso único</option>
+            <option value="0">Múltiplos usos</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="note">Observação (opcional)</label>
+          <input type="text" id="note" placeholder="Ex: Cliente Mesa 5">
+        </div>
+
+        <button type="submit">Gerar voucher</button>
+      </form>
+      <p id="form-feedback" class="feedback"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Vouchers ativos</h2>
+        <button id="refresh-btn" class="secondary">Atualizar</button>
+      </div>
+      <table id="voucher-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nota</th>
+            <th>Validade</th>
+            <th>Uso</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="voucher-list">
+          <tr><td colspan="6" class="empty">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
