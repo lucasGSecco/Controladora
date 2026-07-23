@@ -16,56 +16,121 @@
     <section class="card">
       <h2>Gerar novo voucher</h2>
       <form id="voucher-form">
-        <div class="form-row">
-          <label for="minutes">Validade (minutos)</label>
-          <input type="number" id="minutes" min="1" value="480" required>
-        </div>
+  <div class="form-row gap-md">
+    <div class="form-group flex-2">
+      <label for="note">Nome</label>
+      <input type="text" id="note" placeholder="Ex: Cliente Mesa 5">
+    </div>
+    <div class="form-group flex-1">
+      <label for="count">Quantidade</label>
+      <input type="number" id="count" min="1" value="10" required>
+    </div>
+  </div>
 
-        <div class="form-row">
-          <label for="count">Quantidade</label>
-          <input type="number" id="count" min="1" value="1" required>
-        </div>
+  <div class="form-group radio-group">
+    <label class="radio-label">
+      <input type="radio" name="usageType" value="single" checked>
+      <span>Uso único</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="usageType" value="multi">
+      <span>Multiuso</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="usageType" value="unlimited">
+      <span>Ilimitado</span>
+    </label>
+  </div>
 
-        <div class="form-row">
-          <label for="usageLimit">Uso</label>
-          <select id="usageLimit">
-            <option value="1">Uso único</option>
-            <option value="0">Múltiplos usos</option>
-          </select>
-        </div>
+  <div class="form-row gap-md">
+    <div class="form-group flex-1">
+      <label for="expiration">Expiração</label>
+      <input type="number" id="expiration" min="1" value="24" required>
+    </div>
+    <div class="form-group flex-1">
+      <label for="unit">Unidade</label>
+      <select id="unit">
+        <option value="minutes">Minutos</option>
+        <option value="hours" selected>Horas</option>
+        <option value="days">Dias</option>
+      </select>
+    </div>
+  </div>
 
-        <div class="form-row">
-          <label for="note">Observação (opcional)</label>
-          <input type="text" id="note" placeholder="Ex: Cliente Mesa 5">
-        </div>
+  <div class="form-group">
+    <label for="dataLimit">Limite de dados</label>
+    <div class="input-with-suffix">
+      <input type="number" id="dataLimit" placeholder="Ilimitado">
+      <span class="suffix">MB</span>
+    </div>
+  </div>
 
-        <button type="submit">Gerar voucher</button>
-      </form>
+  <div class="form-row gap-md">
+    <div class="form-group flex-1">
+      <label for="downLimit">Limite de download</label>
+      <div class="input-with-suffix">
+        <input type="number" id="downLimit" placeholder="">
+        <span class="suffix">Mbps</span>
+      </div>
+    </div>
+    <div class="form-group flex-1">
+      <label for="upLimit">Limite de upload</label>
+      <div class="input-with-suffix">
+        <input type="number" id="upLimit" placeholder="">
+        <span class="suffix">Mbps</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" id="cancel-btn" class="btn-cancel">Cancelar</button>
+    <button type="submit" class="btn-primary">Adicionar</button>
+  </div>
+</form>
       <p id="form-feedback" class="feedback"></p>
     </section>
 
     <section class="card">
-      <div class="card-header">
-        <h2>Vouchers ativos</h2>
-        <button id="refresh-btn" class="secondary">Atualizar</button>
-      </div>
-      <table id="voucher-table">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Nota</th>
-            <th>Validade</th>
-            <th>Uso</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="voucher-list">
-          <tr><td colspan="6" class="empty">Carregando...</td></tr>
-        </tbody>
-      </table>
-    </section>
+ <div class="card-header">
+  <h2>Vouchers ativos</h2>
+  <button id="refresh-btn" class="secondary">Atualizar</button>
+</div>
+
+<div class="filters">
+  <input
+    type="text"
+    id="search-input"
+    placeholder="Pesquisar por código ou observação..."
+  >
+
+  <select id="status-filter">
+    <option value="all">Todos</option>
+    <option value="unused">Não usados</option>
+    <option value="used">Usados</option>
+  </select>
+</div>
+  <table id="voucher-table">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nota</th>
+        <th>Validade</th>
+        <th>Uso</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="voucher-list">
+      <tr><td colspan="6" class="empty">Carregando...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="pagination-container">
+    <button id="prev-page" class="secondary" disabled>&laquo; Anterior</button>
+    <span id="page-info">Página 1 de 1</span>
+    <button id="next-page" class="secondary">Próxima &raquo;</button>
   </div>
+</section>
 
   <script src="app.js"></script>
 </body>
