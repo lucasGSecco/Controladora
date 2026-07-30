@@ -89,10 +89,13 @@ function isVoucherUsed(voucher) {
 
 function getFilteredVouchers() {
   return allVouchers.filter((voucher) => {
+    const createdBy = voucher.admin_name || voucher.create_admin || voucher.admin || 'Sistema';
+    
     const textMatch =
       searchQuery === '' ||
       normalizeText(voucher.note).includes(searchQuery) ||
-      normalizeText(voucher.code).includes(searchQuery);
+      normalizeText(voucher.code).includes(searchQuery) ||
+      normalizeText(createdBy).includes(searchQuery);
 
     if (!textMatch) return false;
 
@@ -172,7 +175,7 @@ function renderTable() {
 
   if (!pageItems.length) {
     voucherList.innerHTML =
-      '<tr><td colspan="6" class="empty">Nenhum voucher encontrado.</td></tr>';
+      '<tr><td colspan="7" class="empty">Nenhum voucher encontrado.</td></tr>';
     updatePaginationUI(0);
     return;
   }
@@ -186,10 +189,13 @@ function renderTable() {
         ? voucher.note 
         : (voucher.client_mac ? `<span style="font-family: var(--mono); font-size:11px;">MAC: ${voucher.client_mac}</span>` : '—');
 
+      const createdBy = voucher.admin_name || voucher.create_admin || voucher.admin || 'Sistema';
+
       return `
         <tr data-id="${voucher._id}">
           <td class="voucher-code">${voucher.code || '—'}</td>
           <td>${noteDisplay}</td>
+          <td>${createdBy}</td>
           <td>${formatMinutes(voucher.duration)}</td>
           <td>${usage}</td>
           <td><span class="status-pill ${status.className}">${status.label}</span></td>
@@ -204,7 +210,7 @@ function renderTable() {
 
 async function loadVouchers() {
   voucherList.innerHTML =
-    '<tr><td colspan="6" class="empty">Carregando...</td></tr>';
+    '<tr><td colspan="7" class="empty">Carregando...</td></tr>';
   try {
     const res = await fetch('/api/vouchers');
     if (!res.ok) throw new Error('Falha ao buscar vouchers');
@@ -214,11 +220,10 @@ async function loadVouchers() {
     allVouchers.sort((a, b) => (b.create_time || 0) - (a.create_time || 0));
     renderTable();
   } catch (err) {
-    voucherList.innerHTML = `<tr><td colspan="6" class="empty">Erro ao carregar vouchers: ${err.message}</td></tr>`;
+    voucherList.innerHTML = `<tr><td colspan="7" class="empty">Erro ao carregar vouchers: ${err.message}</td></tr>`;
   }
 }
 
-// Envío do formulário integrado com o layout novo
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -232,7 +237,6 @@ form.addEventListener('submit', async (e) => {
   const downLimit = document.getElementById('downLimit').value;
   const upLimit = document.getElementById('upLimit').value;
 
-  // Conversão da expiração para minutos
   let minutes = expirationVal;
   if (unit === 'hours') {
     minutes = expirationVal * 60;
@@ -240,7 +244,6 @@ form.addEventListener('submit', async (e) => {
     minutes = expirationVal * 1440;
   }
 
-  // Quota: 1 = Uso único, 0 = Múltiplos usos / Ilimitado
   let usageLimit = (usageType === 'single') ? 1 : 0;
 
   const payload = {
@@ -276,8 +279,8 @@ form.addEventListener('submit', async (e) => {
     feedback.className = 'feedback success';
 
     form.reset();
-    document.getElementById('expiration').value = 24;
-    document.getElementById('count').value = 10;
+    document.getElementById('expiration').value = 365;
+    document.getElementById('count').value = 1;
     
     currentPage = 1;
     loadVouchers();
