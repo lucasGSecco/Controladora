@@ -5,12 +5,42 @@ const refreshBtn = document.getElementById('refresh-btn');
 const searchInput = document.getElementById('search-input');
 const statusFilter = document.getElementById('status-filter');
 
+// Elementos dinâmicos da opção Multiuso
+const usageRadios = document.querySelectorAll('input[name="usageType"]');
+const quotaGroup = document.getElementById('quota-group');
+const quotaInput = document.getElementById('quotaLimit');
+
 let allVouchers = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 
 let searchQuery = '';
 let currentStatus = 'all';
+
+// --- CONTROLE DE EXIBIÇÃO DO CAMPO MULTIUSO ---
+if (usageRadios.length > 0) {
+  usageRadios.forEach((radio) => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'multi') {
+        quotaGroup.style.display = 'block';
+        quotaInput.required = true;
+      } else {
+        quotaGroup.style.display = 'none';
+        quotaInput.required = false;
+      }
+    });
+  });
+}
+
+// --- FORMATADOR DE CÓDIGO DO VOUCHER (xxxxx-xxxxx) ---
+function formatVoucherCode(code) {
+  if (!code) return '—';
+  const clean = code.toString().replace(/[^a-zA-Z0-9]/g, '');
+  if (clean.length === 10) {
+    return `${clean.slice(0, 5)}-${clean.slice(5)}`;
+  }
+  return code;
+}
 
 function normalizeText(text) {
   return (text || '')
@@ -89,13 +119,13 @@ function isVoucherUsed(voucher) {
 
 function getFilteredVouchers() {
   return allVouchers.filter((voucher) => {
-    const createdBy = voucher.admin_name || voucher.create_admin || voucher.admin || 'Sistema';
+    // Procura o nome no campo 'nome' ou dentro de 'note'
+    const nameToSearch = voucher.nome || voucher.note || '';
     
     const textMatch =
       searchQuery === '' ||
-      normalizeText(voucher.note).includes(searchQuery) ||
-      normalizeText(voucher.code).includes(searchQuery) ||
-      normalizeText(createdBy).includes(searchQuery);
+      normalizeText(nameToSearch).includes(searchQuery) ||
+      normalizeText(voucher.code).includes(searchQuery);
 
     if (!textMatch) return false;
 
@@ -128,6 +158,10 @@ function updatePaginationUI(totalPages) {
 
 function formatMinutes(minutes) {
   if (!minutes) return '—';
+  if (minutes % 1440 === 0) {
+    const days = minutes / 1440;
+    return `${days}d`;
+  }
   if (minutes % 60 === 0) {
     const hours = minutes / 60;
     return `${hours}h`;
@@ -175,7 +209,7 @@ function renderTable() {
 
   if (!pageItems.length) {
     voucherList.innerHTML =
-      '<tr><td colspan="7" class="empty">Nenhum voucher encontrado.</td></tr>';
+      '<tr><td colspan="6" class="empty">Nenhum voucher encontrado.</td></tr>';
     updatePaginationUI(0);
     return;
   }
@@ -183,19 +217,21 @@ function renderTable() {
   voucherList.innerHTML = pageItems
     .map((voucher) => {
       const status = statusInfo(voucher);
-      const usage = voucher.quota === 0 ? 'Múltiplos usos' : 'Uso único';
       
-      const noteDisplay = voucher.note 
-        ? voucher.note 
-        : (voucher.client_mac ? `<span style="font-family: var(--mono); font-size:11px;">MAC: ${voucher.client_mac}</span>` : '—');
+      let usage = 'Uso único';
+      if (voucher.quota === 0) {
+        usage = 'Ilimitado';
+      } else if (voucher.quota > 1) {
+        usage = `${voucher.used || 0}/${voucher.quota} usos`;
+      }
 
-      const createdBy = voucher.admin_name || voucher.create_admin || voucher.admin || 'Sistema';
+      // Exibe o Nome cadastrado ou a Nota do voucher caso existente
+      const displayName = voucher.nome || voucher.note || '—';
 
       return `
         <tr data-id="${voucher._id}">
-          <td class="voucher-code">${voucher.code || '—'}</td>
-          <td>${noteDisplay}</td>
-          <td>${createdBy}</td>
+          <td class="voucher-code">${formatVoucherCode(voucher.code)}</td>
+          <td>${displayName}</td>
           <td>${formatMinutes(voucher.duration)}</td>
           <td>${usage}</td>
           <td><span class="status-pill ${status.className}">${status.label}</span></td>
@@ -210,7 +246,7 @@ function renderTable() {
 
 async function loadVouchers() {
   voucherList.innerHTML =
-    '<tr><td colspan="7" class="empty">Carregando...</td></tr>';
+    '<tr><td colspan="6" class="empty">Carregando...</td></tr>';
   try {
     const res = await fetch('/api/vouchers');
     if (!res.ok) throw new Error('Falha ao buscar vouchers');
@@ -220,14 +256,15 @@ async function loadVouchers() {
     allVouchers.sort((a, b) => (b.create_time || 0) - (a.create_time || 0));
     renderTable();
   } catch (err) {
-    voucherList.innerHTML = `<tr><td colspan="7" class="empty">Erro ao carregar vouchers: ${err.message}</td></tr>`;
+    voucherList.innerHTML = `<tr><td colspan="6" class="empty">Erro ao carregar vouchers: ${err.message}</td></tr>`;
   }
 }
 
+// --- INTEGRAÇÃO DO BOTÃO ADICIONAR (SUBMIT DO FORMULÁRIO) ---
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const note = document.getElementById('note').value;
+  const nome = document.getElementById('nome').value;
   const count = parseInt(document.getElementById('count').value, 10) || 1;
   const usageType = document.querySelector('input[name="usageType"]:checked').value;
   const expirationVal = parseInt(document.getElementById('expiration').value, 10) || 1;
@@ -237,6 +274,7 @@ form.addEventListener('submit', async (e) => {
   const downLimit = document.getElementById('downLimit').value;
   const upLimit = document.getElementById('upLimit').value;
 
+  // Cálculo da validade em minutos
   let minutes = expirationVal;
   if (unit === 'hours') {
     minutes = expirationVal * 60;
@@ -244,13 +282,22 @@ form.addEventListener('submit', async (e) => {
     minutes = expirationVal * 1440;
   }
 
-  let usageLimit = (usageType === 'single') ? 1 : 0;
+  // Definição de limites de uso do UniFi:
+  // 1 = Uso único, 0 = Ilimitado, >1 = Multiuso
+  let usageLimit = 1;
+  if (usageType === 'unlimited') {
+    usageLimit = 0;
+  } else if (usageType === 'multi') {
+    usageLimit = parseInt(quotaInput.value, 10) || 2;
+  }
 
+  // Montagem do payload de criação
   const payload = {
-    minutes,
-    count,
-    usageLimit,
-    note
+    nome: nome,
+    note: nome, // Enviamos também como note para compatibilidade nativa do UniFi
+    count: count,
+    minutes: minutes,
+    usageLimit: usageLimit
   };
 
   if (dataLimit) payload.dataQuotaMB = parseInt(dataLimit, 10);
@@ -278,9 +325,18 @@ form.addEventListener('submit', async (e) => {
     feedback.textContent = 'Voucher(s) gerado(s) com sucesso!';
     feedback.className = 'feedback success';
 
+    // Limpa formulário e restaura valores padrão
     form.reset();
+    
+    if (quotaGroup) {
+      quotaGroup.style.display = 'none';
+      quotaInput.required = false;
+    }
+
     document.getElementById('expiration').value = 365;
     document.getElementById('count').value = 1;
+    document.getElementById('downLimit').value = 30;
+    document.getElementById('upLimit').value = 30;
     
     currentPage = 1;
     loadVouchers();
@@ -292,6 +348,17 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
+// Botão Cancelar
+document.getElementById('cancel-btn')?.addEventListener('click', () => {
+  form.reset();
+  if (quotaGroup) {
+    quotaGroup.style.display = 'none';
+    quotaInput.required = false;
+  }
+  feedback.textContent = '';
+});
+
+// Ação de Revogar
 voucherList.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('revoke-btn')) return;
 

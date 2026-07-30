@@ -1,5 +1,6 @@
 const axios = require('axios');
 const https = require('https');
+const { appendVoucherRow, formatDateBR } = require('./planilhaService');
 
 const {
   UNIFI_HOST,
@@ -82,6 +83,11 @@ async function createVoucher({
   downloadLimitKbps,
   dataQuotaMB,
   note,
+  // Dados novos, usados apenas para registrar a linha na planilha:
+  nome,
+  setor,
+  funcao,
+  responsavel,
 }) {
   const payload = {
     cmd: 'create-voucher',
@@ -98,6 +104,26 @@ async function createVoucher({
   const data = await withSession((headers) =>
     client.post(`/api/s/${UNIFI_SITE}/cmd/hotspot`, payload, { headers })
   );
+
+  // Registra a linha na planilha Google, sem derrubar a criação do voucher
+  // caso a planilha falhe por qualquer motivo (credenciais, rede, etc.)
+  try {
+    const created = (data.data || [])[0];
+    const voucherCode = created ? created.code : null;
+    const diasLiberado = minutes ? Math.round(minutes / 1440) : null; // minutos -> dias
+
+    await appendVoucherRow({
+      nome,
+      setor,
+      funcao,
+      numeroVoucher: voucherCode,
+      dataLiberacao: formatDateBR(),
+      responsavel,
+      diasLiberado,
+    });
+  } catch (err) {
+    console.error('Erro ao salvar voucher na planilha Google:', err.message);
+  }
 
   return data;
 }
@@ -140,6 +166,8 @@ async function listAllVouchersWithHistory() {
       create_time: g.assoc_time || g.start,
       use_time: g.assoc_time || g.start,
     }));
+
+    console.log(activeVouchers);
 
   return [...activeVouchers, ...usedVouchers];
 }

@@ -82,12 +82,13 @@ h1 {
   gap: 16px;
 }
 
+/* Utilitários de proporção Flexbox */
 .flex-1 {
   flex: 1;
 }
 
-.flex-2 {
-  flex: 2;
+.flex-3 {
+  flex: 3; /* Usado no Nome para deixá-lo maior */
 }
 
 .form-group {
@@ -343,15 +344,16 @@ tbody tr:last-child td {
 
 .filters {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin: 15px 0;
 }
 
-.filters input,
+.filters input[type="text"] {
+  flex: 3;
+}
+
 .filters select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
+  flex: 1;
 }
 
 @media (prefers-reduced-motion: no-preference) {

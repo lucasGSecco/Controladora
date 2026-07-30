@@ -16,10 +16,11 @@
     <section class="card">
       <h2>Gerar novo voucher</h2>
       <form id="voucher-form">
+        
         <div class="form-row gap-md">
-          <div class="form-group flex-2">
-            <label for="note">Nome</label>
-            <input type="text" id="note" placeholder="Ex: Cliente Mesa 5">
+          <div class="form-group flex-3">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" placeholder="Ex: João Silva" required>
           </div>
           <div class="form-group flex-1">
             <label for="count">Quantidade</label>
@@ -40,6 +41,11 @@
             <input type="radio" name="usageType" value="unlimited">
             <span>Ilimitado</span>
           </label>
+        </div>
+
+        <div class="form-group" id="quota-group" style="display: none;">
+          <label for="quotaLimit">Quantidade de Usos por Voucher</label>
+          <input type="number" id="quotaLimit" min="2" value="2" placeholder="Ex: 5">
         </div>
 
         <div class="form-row gap-md">
@@ -82,6 +88,17 @@
           </div>
         </div>
 
+        <div class="form-row gap-md">
+          <div class="form-group flex-1">
+            <label for="setor">Setor</label>
+            <input type="text" id="setor" placeholder="Ex: TI / Comercial">
+          </div>
+          <div class="form-group flex-1">
+            <label for="funcao">Função</label>
+            <input type="text" id="funcao" placeholder="Ex: Analista">
+          </div>
+        </div>
+
         <div class="form-actions">
           <button type="button" id="cancel-btn" class="btn-cancel">Cancelar</button>
           <button type="submit" class="btn-primary">Adicionar</button>
@@ -100,7 +117,7 @@
         <input
           type="text"
           id="search-input"
-          placeholder="Pesquisar por código ou observação..."
+          placeholder="Pesquisar por nome ou código..."
         >
 
         <select id="status-filter">
@@ -114,16 +131,15 @@
         <thead>
           <tr>
             <th>Código</th>
-            <th>Nota</th>
-            <th>Criado por</th>
+            <th>Nome</th>
             <th>Validade</th>
             <th>Uso</th>
             <th>Status</th>
-            <th></th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody id="voucher-list">
-          <tr><td colspan="7" class="empty">Carregando...</td></tr>
+          <tr><td colspan="6" class="empty">Carregando...</td></tr>
         </tbody>
       </table>
 
