@@ -6,11 +6,9 @@ const {
   GOOGLE_SHEET_ID,
   GOOGLE_SERVICE_ACCOUNT_EMAIL,
   GOOGLE_PRIVATE_KEY,
-  GOOGLE_SHEET_TAB_NAME, // opcional: nome da aba. Se vazio, usa a primeira aba do arquivo.
+  GOOGLE_SHEET_TAB_NAME,
 } = process.env;
 
-// Precisam bater EXATAMENTE com o texto da primeira linha da planilha
-// (mesma acentuação, maiúsculas/minúsculas e espaços).
 const COLUNAS = [
   'Nome',
   'Setor',
@@ -73,10 +71,6 @@ function formatDateBR(date = new Date()) {
   return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
-/**
- * Adiciona uma linha na planilha no formato:
- * Nome | Setor | Função | Numero do Voucher | Data da liberação | Responsável | Dias Liberado
- */
 async function appendVoucherRow({
   nome,
   setor,
@@ -88,6 +82,8 @@ async function appendVoucherRow({
 }) {
   const sheet = await getSheet();
 
+  console.log("numero do Voucher:", numeroVoucher);
+  
   await sheet.addRow({
     Nome: nome || '',
     Setor: setor || '',

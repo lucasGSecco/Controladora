@@ -5,7 +5,6 @@ const refreshBtn = document.getElementById('refresh-btn');
 const searchInput = document.getElementById('search-input');
 const statusFilter = document.getElementById('status-filter');
 
-// Elementos dinâmicos da opção Multiuso
 const usageRadios = document.querySelectorAll('input[name="usageType"]');
 const quotaGroup = document.getElementById('quota-group');
 const quotaInput = document.getElementById('quotaLimit');
@@ -17,7 +16,6 @@ const itemsPerPage = 10;
 let searchQuery = '';
 let currentStatus = 'all';
 
-// --- CONTROLE DE EXIBIÇÃO DO CAMPO MULTIUSO ---
 if (usageRadios.length > 0) {
   usageRadios.forEach((radio) => {
     radio.addEventListener('change', (e) => {
@@ -32,7 +30,6 @@ if (usageRadios.length > 0) {
   });
 }
 
-// --- FORMATADOR DE CÓDIGO DO VOUCHER (xxxxx-xxxxx) ---
 function formatVoucherCode(code) {
   if (!code) return '—';
   const clean = code.toString().replace(/[^a-zA-Z0-9]/g, '');
@@ -119,7 +116,6 @@ function isVoucherUsed(voucher) {
 
 function getFilteredVouchers() {
   return allVouchers.filter((voucher) => {
-    // Procura o nome no campo 'nome' ou dentro de 'note'
     const nameToSearch = voucher.nome || voucher.note || '';
     
     const textMatch =
@@ -171,25 +167,16 @@ function formatMinutes(minutes) {
 
 function statusInfo(voucher) {
   if (isVoucherUsed(voucher)) {
-    return {
-      label: 'Usado',
-      className: 'status-used',
-    };
+    return { label: 'Usado', className: 'status-used' };
   }
 
   const raw = (voucher.status || '').toUpperCase();
 
   if (raw.includes('EXPIRED')) {
-    return {
-      label: 'Expirado',
-      className: 'status-expired',
-    };
+    return { label: 'Expirado', className: 'status-expired' };
   }
 
-  return {
-    label: 'Válido',
-    className: 'status-valid',
-  };
+  return { label: 'Válido', className: 'status-valid' };
 }
 
 function renderTable() {
@@ -225,7 +212,6 @@ function renderTable() {
         usage = `${voucher.used || 0}/${voucher.quota} usos`;
       }
 
-      // Exibe o Nome cadastrado ou a Nota do voucher caso existente
       const displayName = voucher.nome || voucher.note || '—';
 
       return `
@@ -260,21 +246,23 @@ async function loadVouchers() {
   }
 }
 
-// --- INTEGRAÇÃO DO BOTÃO ADICIONAR (SUBMIT DO FORMULÁRIO) ---
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const nome = document.getElementById('nome').value;
-  const count = parseInt(document.getElementById('count').value, 10) || 1;
-  const usageType = document.querySelector('input[name="usageType"]:checked').value;
-  const expirationVal = parseInt(document.getElementById('expiration').value, 10) || 1;
-  const unit = document.getElementById('unit').value;
+  const nome = document.getElementById('nome')?.value || '';
+  const setor = document.getElementById('setor')?.value || '';
+  const funcao = document.getElementById('funcao')?.value || '';
+  const responsavel = document.getElementById('responsavel')?.value || '';
 
-  const dataLimit = document.getElementById('dataLimit').value;
-  const downLimit = document.getElementById('downLimit').value;
-  const upLimit = document.getElementById('upLimit').value;
+  const count = parseInt(document.getElementById('count')?.value, 10) || 1;
+  const usageType = document.querySelector('input[name="usageType"]:checked')?.value || 'single';
+  const expirationVal = parseInt(document.getElementById('expiration')?.value, 10) || 1;
+  const unit = document.getElementById('unit')?.value || 'days';
 
-  // Cálculo da validade em minutos
+  const dataLimit = document.getElementById('dataLimit')?.value;
+  const downLimit = document.getElementById('downLimit')?.value;
+  const upLimit = document.getElementById('upLimit')?.value;
+
   let minutes = expirationVal;
   if (unit === 'hours') {
     minutes = expirationVal * 60;
@@ -282,8 +270,6 @@ form.addEventListener('submit', async (e) => {
     minutes = expirationVal * 1440;
   }
 
-  // Definição de limites de uso do UniFi:
-  // 1 = Uso único, 0 = Ilimitado, >1 = Multiuso
   let usageLimit = 1;
   if (usageType === 'unlimited') {
     usageLimit = 0;
@@ -291,13 +277,18 @@ form.addEventListener('submit', async (e) => {
     usageLimit = parseInt(quotaInput.value, 10) || 2;
   }
 
-  // Montagem do payload de criação
   const payload = {
-    nome: nome,
-    note: nome, // Enviamos também como note para compatibilidade nativa do UniFi
-    count: count,
-    minutes: minutes,
-    usageLimit: usageLimit
+    nome,
+    setor,
+    funcao,
+    responsavel,
+    note: nome, 
+    count,
+    minutes,
+    usageLimit,
+    setor: setor,
+    funcao: funcao,
+    responsavel: responsavel
   };
 
   if (dataLimit) payload.dataQuotaMB = parseInt(dataLimit, 10);
@@ -306,7 +297,7 @@ form.addEventListener('submit', async (e) => {
 
   const submitBtn = form.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
-  feedback.textContent = 'Gerando voucher...';
+  feedback.textContent = 'Gerando voucher e salvando na planilha...';
   feedback.className = 'feedback';
 
   try {
@@ -322,10 +313,9 @@ form.addEventListener('submit', async (e) => {
       throw new Error(data.error || 'Erro ao gerar voucher');
     }
 
-    feedback.textContent = 'Voucher(s) gerado(s) com sucesso!';
+    feedback.textContent = 'Voucher(s) gerado(s) e registrado(s) na planilha com sucesso!';
     feedback.className = 'feedback success';
 
-    // Limpa formulário e restaura valores padrão
     form.reset();
     
     if (quotaGroup) {
@@ -348,7 +338,6 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// Botão Cancelar
 document.getElementById('cancel-btn')?.addEventListener('click', () => {
   form.reset();
   if (quotaGroup) {
@@ -358,7 +347,6 @@ document.getElementById('cancel-btn')?.addEventListener('click', () => {
   feedback.textContent = '';
 });
 
-// Ação de Revogar
 voucherList.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('revoke-btn')) return;
 
@@ -398,4 +386,4 @@ statusFilter.addEventListener('change', (e) => {
 });
 
 ensurePaginationElements();
-loadVouchers();
+loadVouchers(); ''

@@ -26,6 +26,8 @@ exports.createVoucher = async (req, res) => {
       responsavel
     } = req.body;
 
+    console.log('--- REQ.BODY RECEBIDO NO BACKEND ---', req.body);
+
     const result = await unifiService.createVoucher({
       minutes: Number(minutes),
       count: Number(count),
@@ -33,23 +35,12 @@ exports.createVoucher = async (req, res) => {
       uploadLimitKbps: uploadLimitKbps ? Number(uploadLimitKbps) : undefined,
       downloadLimitKbps: downloadLimitKbps ? Number(downloadLimitKbps) : undefined,
       dataQuotaMB: dataQuotaMB ? Number(dataQuotaMB) : undefined,
-      note
+      note,
+      nome,
+      setor,
+      funcao,
+      responsavel
     });
-
-    const diasLiberado = Math.ceil(Number(minutes) / 1440);
-    const vouchersArray = Array.isArray(result) ? result : [result];
-
-    for (const voucher of vouchersArray) {
-      const codigoVoucher = voucher.code || voucher.create_time || '';
-      await googleSheetsService.appendVoucherRow({
-        nome,
-        setor,
-        funcao,
-        numeroVoucher: codigoVoucher,
-        responsavel,
-        diasLiberado
-      });
-    }
 
     res.status(201).json(result);
   } catch (error) {

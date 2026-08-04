@@ -75,20 +75,21 @@ async function withSession(requestFn) {
   return response.data;
 }
 
-async function createVoucher({
-  minutes,
-  count = 1,
-  usageLimit = 1,
-  uploadLimitKbps,
-  downloadLimitKbps,
-  dataQuotaMB,
-  note,
-  // Dados novos, usados apenas para registrar a linha na planilha:
-  nome,
-  setor,
-  funcao,
-  responsavel,
-}) {
+async function createVoucher(params) {
+  const {
+    minutes,
+    count = 1,
+    usageLimit = 1,
+    uploadLimitKbps,
+    downloadLimitKbps,
+    dataQuotaMB,
+    note,
+    nome,
+    setor,
+    funcao,
+    responsavel,
+  } = params;
+
   const payload = {
     cmd: 'create-voucher',
     expire: minutes,
@@ -105,18 +106,37 @@ async function createVoucher({
     client.post(`/api/s/${UNIFI_SITE}/cmd/hotspot`, payload, { headers })
   );
 
-  // Registra a linha na planilha Google, sem derrubar a criação do voucher
-  // caso a planilha falhe por qualquer motivo (credenciais, rede, etc.)
   try {
-    const created = (data.data || [])[0];
-    const voucherCode = created ? created.code : null;
-    const diasLiberado = minutes ? Math.round(minutes / 1440) : null; // minutos -> dias
+    const createdList = data.data || [];
+    const created = createdList[0];
+    
+    let rawCode = '';
+
+    if (created && created.create_time) {
+      const voucherRes = await withSession((headers) =>
+        client.get(`/api/s/${UNIFI_SITE}/stat/voucher?create_time=${created.create_time}`, { headers })
+      );
+
+      const foundVoucher = (voucherRes.data || [])[0];
+      if (foundVoucher) {
+        rawCode = foundVoucher.code || foundVoucher.key || '';
+      }
+    }
+
+    if (rawCode.length === 10) {
+      rawCode = `${rawCode.slice(0, 5)}-${rawCode.slice(5)}`;
+    }
+
+    const diasLiberado = minutes ? Math.round(minutes / 1440) : null;
+
+    console.log("Número do voucher encontrado no UniFi:", rawCode);
+
 
     await appendVoucherRow({
       nome,
       setor,
       funcao,
-      numeroVoucher: voucherCode,
+      numeroVoucher: rawCode,
       dataLiberacao: formatDateBR(),
       responsavel,
       diasLiberado,
@@ -167,7 +187,6 @@ async function listAllVouchersWithHistory() {
       use_time: g.assoc_time || g.start,
     }));
 
-    console.log(activeVouchers);
 
   return [...activeVouchers, ...usedVouchers];
 }
