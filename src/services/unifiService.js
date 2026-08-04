@@ -172,6 +172,8 @@ async function listAllVouchersWithHistory() {
   const activeVouchers = await listVouchers();
   const guests = await listHotspotGuests();
 
+  console.log(guests);
+
   const usedVouchers = guests
     .filter((g) => g.voucher_code || g.voucher_id)
     .map((g) => ({
@@ -186,7 +188,6 @@ async function listAllVouchersWithHistory() {
       create_time: g.assoc_time || g.start,
       use_time: g.assoc_time || g.start,
     }));
-
 
   return [...activeVouchers, ...usedVouchers];
 }

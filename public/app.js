@@ -203,8 +203,6 @@ function renderTable() {
 
   voucherList.innerHTML = pageItems
     .map((voucher) => {
-      const status = statusInfo(voucher);
-      
       let usage = 'Uso único';
       if (voucher.quota === 0) {
         usage = 'Ilimitado';
@@ -213,6 +211,7 @@ function renderTable() {
       }
 
       const displayName = voucher.nome || voucher.note || '—';
+      const macAddress = voucher.client_mac || voucher.used_by || '—————————————————';
 
       return `
         <tr data-id="${voucher._id}">
@@ -220,7 +219,7 @@ function renderTable() {
           <td>${displayName}</td>
           <td>${formatMinutes(voucher.duration)}</td>
           <td>${usage}</td>
-          <td><span class="status-pill ${status.className}">${status.label}</span></td>
+          <td><code>${macAddress}</code></td>
           <td><button class="revoke-btn" data-id="${voucher._id}">Revogar</button></td>
         </tr>
       `;
