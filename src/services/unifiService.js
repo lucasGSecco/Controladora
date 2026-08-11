@@ -16,6 +16,7 @@ const client = axios.create({
   httpsAgent,
   withCredentials: true,
   validateStatus: () => true,
+  timeout: 5000,
 });
 
 let sessionCookie = null;
@@ -53,26 +54,33 @@ async function withSession(requestFn) {
   if (!sessionCookie) {
     await login();
   }
-
-  const headers = { Cookie: sessionCookie };
-  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
-
-  let response = await requestFn(headers);
-
-  if (response.status === 401) {
-    await login();
-    const retryHeaders = { Cookie: sessionCookie };
-    if (csrfToken) retryHeaders['X-CSRF-Token'] = csrfToken;
-    response = await requestFn(retryHeaders);
+  console.log("withSession 1");
+  const execute = async () => {
+    const headers = { Cookie: sessionCookie };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+    return await requestFn(headers);
+  };
+  console.log("withSession 2");
+  try {
+    let response = await execute();
+    
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`Erro na API UniFi (status ${response.status}): ${JSON.stringify(response.data)}`);
+    }
+    console.log("withSession 3");
+    return response.data;
+  } catch (error) {
+    // Se for erro 401 (Sessão expirada), tenta relogar e refazer 1 vez
+    if (error.response && error.response.status === 401) {
+      await login();
+      let retryResponse = await execute();
+      return retryResponse.data;
+    }
+    
+    // Se for outro erro, lança para ser tratado fora
+    throw error;
   }
-
-  if (response.status < 200 || response.status >= 300) {
-    throw new Error(
-      `Erro na API UniFi (status ${response.status}): ${JSON.stringify(response.data)}`
-    );
-  }
-
-  return response.data;
+  console.log("withSession 4");
 }
 
 async function createVoucher(params) {
@@ -172,7 +180,6 @@ async function listAllVouchersWithHistory() {
   const activeVouchers = await listVouchers();
   const guests = await listHotspotGuests();
 
-  console.log(guests);
 
   const usedVouchers = guests
     .filter((g) => g.voucher_code || g.voucher_id)
@@ -192,15 +199,46 @@ async function listAllVouchersWithHistory() {
   return [...activeVouchers, ...usedVouchers];
 }
 
-async function revokeVoucher(voucherId) {
-  const data = await withSession((headers) =>
-    client.post(
-      `/api/s/${UNIFI_SITE}/cmd/hotspot`,
-      { cmd: 'delete-voucher', _id: voucherId },
-      { headers }
-    )
-  );
-  return data;
+async function revokeVoucher(voucherId, macAddress = null) {
+  try {
+    console.log("TESTE 1");
+    if (macAddress && macAddress !== null) {
+      const cleanMac = macAddress.toLowerCase();
+
+      console.log("TESTE 2");
+
+    
+
+      console.log("TESTE 3");
+
+      await withSession((headers) =>
+        client.post(
+          `/api/s/${UNIFI_SITE}/cmd/stamgr`,
+          { cmd: 'forget-sta', macs: [cleanMac] },
+          { headers }
+        )
+      ).catch(() => {});
+      console.log("TESTE 4");
+    }
+  } catch (error) {
+    console.warn('Aviso ao remover o dispositivo:', error.message);
+  }
+
+  try {
+    console.log("TESTE 5");
+    return await withSession((headers) =>
+      client.post(
+        `/api/s/${UNIFI_SITE}/cmd/hotspot`,
+        { cmd: 'delete-voucher', _id: voucherId },
+        { headers }
+      )
+    );
+  } catch (err) {
+    return await withSession((headers) =>
+      client.delete(`/api/s/${UNIFI_SITE}/rest/voucher/${voucherId}`, { headers })
+    );
+  }
+  console.log("TESTE 6");
 }
 
 module.exports = {

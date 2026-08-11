@@ -50,7 +50,12 @@ exports.createVoucher = async (req, res) => {
 
 exports.deleteVoucher = async (req, res) => {
   try {
-    await unifiService.revokeVoucher(req.params.id);
+    const { id } = req.params;
+    // Captura o MAC enviado via query string (?mac=...) ou pelo body
+    const mac = req.query.mac || req.body?.mac;
+    console.log("");
+    await unifiService.revokeVoucher(id, mac);
+
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });

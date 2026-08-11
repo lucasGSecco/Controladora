@@ -220,7 +220,7 @@ function renderTable() {
           <td>${formatMinutes(voucher.duration)}</td>
           <td>${usage}</td>
           <td><code>${macAddress}</code></td>
-          <td><button class="revoke-btn" data-id="${voucher._id}">Revogar</button></td>
+          <td><button class="revoke-btn" data-id="${voucher._id}" data-mac="${macAddress}">Revogar</button></td>
         </tr>
       `;
     })
@@ -258,9 +258,9 @@ form.addEventListener('submit', async (e) => {
   const expirationVal = parseInt(document.getElementById('expiration')?.value, 10) || 1;
   const unit = document.getElementById('unit')?.value || 'days';
 
-  const dataLimit = document.getElementById('dataLimit')?.value;
-  const downLimit = document.getElementById('downLimit')?.value;
-  const upLimit = document.getElementById('upLimit')?.value;
+  const dataLimitVal = document.getElementById('dataLimit')?.value;
+  const downLimitVal = document.getElementById('downLimit')?.value;
+  const upLimitVal = document.getElementById('upLimit')?.value;
 
   let minutes = expirationVal;
   if (unit === 'hours') {
@@ -284,15 +284,17 @@ form.addEventListener('submit', async (e) => {
     note: nome, 
     count,
     minutes,
-    usageLimit,
-    setor: setor,
-    funcao: funcao,
-    responsavel: responsavel
+    usageLimit
   };
 
-  if (dataLimit) payload.dataQuotaMB = parseInt(dataLimit, 10);
-  if (downLimit) payload.downloadLimitKbps = parseInt(downLimit, 10) * 1024;
-  if (upLimit) payload.uploadLimitKbps = parseInt(upLimit, 10) * 1024;
+  // Trata conversão numérica de forma segura para evitar enviar NaN
+  const dataLimit = parseInt(dataLimitVal, 10);
+  const downLimit = parseInt(downLimitVal, 10);
+  const upLimit = parseInt(upLimitVal, 10);
+
+  if (!isNaN(dataLimit)) payload.dataQuotaMB = dataLimit;
+  if (!isNaN(downLimit)) payload.downloadLimitKbps = downLimit * 1024;
+  if (!isNaN(upLimit)) payload.uploadLimitKbps = upLimit * 1024;
 
   const submitBtn = form.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
@@ -350,6 +352,8 @@ voucherList.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('revoke-btn')) return;
 
   const id = e.target.dataset.id;
+  const mac = e.target.dataset.mac;
+
   const confirmed = confirm('Revogar este voucher? Essa ação não pode ser desfeita.');
   if (!confirmed) return;
 
@@ -357,12 +361,22 @@ voucherList.addEventListener('click', async (e) => {
   e.target.textContent = 'Revogando...';
 
   try {
-    const res = await fetch(`/api/vouchers/${id}`, { method: 'DELETE' });
+    const hasValidMac = mac && !mac.includes('—————————————————');
+    const url = hasValidMac 
+      ? `/api/vouchers/${id}?mac=${encodeURIComponent(mac)}` 
+      : `/api/vouchers/${id}`;
+
+    console.log("antes");
+    const res = await fetch(url, { method: 'DELETE' });
+    console.log("depois");
+
     if (!res.ok && res.status !== 204) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Erro ao revogar voucher');
     }
-    loadVouchers();
+
+    await loadVouchers();
+
   } catch (err) {
     alert(err.message);
     e.target.disabled = false;
@@ -385,4 +399,4 @@ statusFilter.addEventListener('change', (e) => {
 });
 
 ensurePaginationElements();
-loadVouchers(); ''
+loadVouchers();
