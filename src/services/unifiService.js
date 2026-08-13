@@ -97,7 +97,9 @@ async function createVoucher(params) {
     funcao,
     responsavel,
   } = params;
-
+  
+  console.log('--- REQ.BODY RECEBIDO NO BACKEND ---', params);
+  
   const payload = {
     cmd: 'create-voucher',
     expire: minutes,

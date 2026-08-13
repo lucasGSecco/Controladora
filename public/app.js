@@ -287,14 +287,27 @@ form.addEventListener('submit', async (e) => {
     usageLimit
   };
 
-  // Trata conversão numérica de forma segura para evitar enviar NaN
   const dataLimit = parseInt(dataLimitVal, 10);
-  const downLimit = parseInt(downLimitVal, 10);
-  const upLimit = parseInt(upLimitVal, 10);
+  let downLimit = parseInt(downLimitVal, 10);
+  let upLimit = parseInt(upLimitVal, 10);
 
+  // Validação visual/alerta caso o usuário exceda 100
+  if (!isNaN(downLimit) && downLimit > 100) {
+    feedback.textContent = 'O limite de download não pode ser maior que 100 Mbps.';
+    feedback.className = 'feedback error';
+    return;
+  }
+
+  if (!isNaN(upLimit) && upLimit > 100) {
+    feedback.textContent = 'O limite de upload não pode ser maior que 100 Mbps.';
+    feedback.className = 'feedback error';
+    return;
+  }
+
+  // Só atribui ao payload se for um número válido (se estiver vazio, não insere, tornando ilimitado)
   if (!isNaN(dataLimit)) payload.dataQuotaMB = dataLimit;
-  if (!isNaN(downLimit)) payload.downloadLimitKbps = downLimit * 1024;
-  if (!isNaN(upLimit)) payload.uploadLimitKbps = upLimit * 1024;
+  if (!isNaN(downLimit)) payload.downloadLimitKbps = downLimit * 1000;
+  if (!isNaN(upLimit)) payload.uploadLimitKbps = upLimit * 1000;
 
   const submitBtn = form.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
