@@ -220,7 +220,15 @@ function renderTable() {
           <td>${formatMinutes(voucher.duration)}</td>
           <td>${usage}</td>
           <td><code>${macAddress}</code></td>
-          <td><button class="revoke-btn" data-id="${voucher._id}" data-mac="${macAddress}">Revogar</button></td>
+          <td>
+            <button 
+              class="revoke-btn" 
+              data-id="${voucher._id}" 
+              data-mac="${macAddress}" 
+              data-numero-voucher="${voucher.code}">
+              Revogar
+            </button>
+          </td>
         </tr>
       `;
     })
@@ -366,6 +374,7 @@ voucherList.addEventListener('click', async (e) => {
 
   const id = e.target.dataset.id;
   const mac = e.target.dataset.mac;
+  const nVoucher = e.target.dataset.numeroVoucher;
 
   const confirmed = confirm('Revogar este voucher? Essa ação não pode ser desfeita.');
   if (!confirmed) return;
@@ -379,9 +388,13 @@ voucherList.addEventListener('click', async (e) => {
       ? `/api/vouchers/${id}?mac=${encodeURIComponent(mac)}` 
       : `/api/vouchers/${id}`;
 
-    console.log("antes");
-    const res = await fetch(url, { method: 'DELETE' });
-    console.log("depois");
+    const res = await fetch(url, { 
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ numeroVoucher: nVoucher })
+    });
 
     if (!res.ok && res.status !== 204) {
       const data = await res.json().catch(() => ({}));
@@ -395,6 +408,14 @@ voucherList.addEventListener('click', async (e) => {
     e.target.disabled = false;
     e.target.textContent = 'Revogar';
   }
+});
+
+refreshBtn.addEventListener('click', loadVouchers);
+
+searchInput.addEventListener('input', (e) => {
+  searchQuery = normalizeText(e.target.value);
+  currentPage = 1;
+  renderTable();
 });
 
 refreshBtn.addEventListener('click', loadVouchers);

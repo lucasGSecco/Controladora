@@ -26,8 +26,6 @@ exports.createVoucher = async (req, res) => {
       responsavel
     } = req.body;
 
-    console.log('--- REQ.BODY RECEBIDO NO BACKEND ---', req.body);
-
     const result = await unifiService.createVoucher({
       minutes: Number(minutes),
       count: Number(count),
@@ -51,10 +49,9 @@ exports.createVoucher = async (req, res) => {
 exports.deleteVoucher = async (req, res) => {
   try {
     const { id } = req.params;
-    // Captura o MAC enviado via query string (?mac=...) ou pelo body
     const mac = req.query.mac || req.body?.mac;
-    console.log("");
-    await unifiService.revokeVoucher(id, mac);
+    const numeroVoucher = req.body.numeroVoucher
+    await unifiService.revokeVoucher(id, mac, numeroVoucher);
 
     res.status(204).send();
   } catch (error) {

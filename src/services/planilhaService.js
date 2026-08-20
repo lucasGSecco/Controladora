@@ -95,4 +95,50 @@ async function appendVoucherRow({
   });
 }
 
-module.exports = { appendVoucherRow, formatDateBR, COLUNAS };
+/**
+ * @param {string|number} numeroVoucher
+ * @returns {Promise<boolean>}
+ */
+async function deleteVoucherRow(numeroVoucher) {
+  if (!numeroVoucher) {
+    console.log('Nenhum número de voucher foi fornecido para exclusão.');
+    return false;
+  }
+
+  // Função auxiliar para remover tudo que não for dígito/letra
+  const normalize = (val) => String(val || '').replace(/[^a-zA-Z0-9]/g, '');
+  const targetCode = normalize(numeroVoucher);
+
+  const sheet = await getSheet();
+  const rows = await sheet.getRows();
+
+  const targetRow = rows.find((row) => {
+    // Tenta pegar o valor de diferentes formas para evitar falhas de versão ou cabeçalho
+    const cellValue = 
+      (typeof row.get === 'function' ? row.get('Numero do Voucher') : null) ||
+      (typeof row.get === 'function' ? row.get('Número do Voucher') : null) ||
+      row['Numero do Voucher'] ||
+      row['Número do Voucher'] ||
+      '';
+
+    const sheetCode = normalize(cellValue);
+    return sheetCode === targetCode;
+  });
+
+  if (targetRow) {
+    await targetRow.delete();
+    console.log(`Voucher ${numeroVoucher} (normalizado: ${targetCode}) removido com sucesso.`);
+    return true;
+  }
+
+  // LOG DE DEPURACÃO: Se não encontrar, exibe no terminal o que ele leu nas primeiras linhas
+  console.log(`Voucher ${numeroVoucher} (normalizado: ${targetCode}) NÃO foi encontrado na planilha.`);
+  if (rows.length > 0) {
+    console.log('Exemplo dos cabeçalhos/valores lidos na 1ª linha da planilha:');
+    console.log('row.toObject():', typeof rows[0].toObject === 'function' ? rows[0].toObject() : rows[0]);
+  }
+
+  return false;
+}
+
+module.exports = { appendVoucherRow, deleteVoucherRow, formatDateBR, COLUNAS };
