@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
     const sessionData = await unifiService.login(username, password);
     
     req.session.unifi = sessionData;
-    req.session.user = { nome: username }; // Salva o nome/username na sessão
+    req.session.user = { nome: username };
     
     res.status(200).json({ message: 'Autenticado com sucesso' });
   } catch (error) {
@@ -33,7 +33,6 @@ exports.listVouchers = async (req, res) => {
   }
 };
 
-// 2. Extrai o responsável da sessão e envia para o serviço
 exports.createVoucher = async (req, res) => {
   try {
     const {
@@ -42,7 +41,6 @@ exports.createVoucher = async (req, res) => {
       setor, funcao
     } = req.body;
 
-    // Busca o nome salvo no req.session.user durante o login
     const responsavel = req.session?.user?.nome || req.user?.nome || 'Não identificado';
 
     const result = await unifiService.createVoucher(req.session.unifi, {
@@ -53,7 +51,7 @@ exports.createVoucher = async (req, res) => {
       downloadLimitKbps: downloadLimitKbps ? Number(downloadLimitKbps) : undefined,
       dataQuotaMB: dataQuotaMB ? Number(dataQuotaMB) : undefined,
       note, nome, setor, funcao,
-      responsavel // Repassa a variável tratada para a função do serviço
+      responsavel
     });
 
     res.status(201).json(result);

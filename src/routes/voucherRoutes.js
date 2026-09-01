@@ -9,10 +9,8 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Rota pública para autenticação
 router.post('/login', voucherController.login);
 
-// Rotas protegidas por autenticação
 router.get('/vouchers', requireAuth, voucherController.listVouchers);
 router.post('/vouchers', requireAuth, voucherController.createVoucher);
 router.delete('/vouchers/:id', requireAuth, voucherController.deleteVoucher);

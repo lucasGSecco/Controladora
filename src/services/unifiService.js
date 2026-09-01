@@ -56,7 +56,6 @@ async function executeWithSession(session, requestFn) {
 
   const response = await requestFn(headers);
 
-  // Tratamento de expiração no UniFi
   if (response.status === 401) {
     const error = new Error('Sessão UniFi expirada');
     error.status = 401;

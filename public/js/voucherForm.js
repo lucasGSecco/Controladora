@@ -36,7 +36,6 @@ export function initVoucherForm({ formEl, feedbackEl, onSubmit }) {
     if (usageType === 'unlimited') usageLimit = 0;
     else if (usageType === 'multi') usageLimit = parseInt(quotaInput.value, 10) || 2;
 
-    // O responsável não é enviado aqui; o backend o recupera via sessão.
     const payload = { nome, setor, funcao, note: nome, count, minutes, usageLimit };
 
     const dataLimit = parseInt(dataLimitVal, 10);

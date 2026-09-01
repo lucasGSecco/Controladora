@@ -103,7 +103,6 @@ async function deleteVoucherRow(numeroVoucher) {
     return false;
   }
 
-  // Função auxiliar para remover tudo que não for dígito/letra
   const normalize = (val) => String(val || '').replace(/[^a-zA-Z0-9]/g, '');
   const targetCode = normalize(numeroVoucher);
 
@@ -111,7 +110,6 @@ async function deleteVoucherRow(numeroVoucher) {
   const rows = await sheet.getRows();
 
   const targetRow = rows.find((row) => {
-    // Tenta pegar o valor de diferentes formas para evitar falhas de versão ou cabeçalho
     const cellValue = 
       (typeof row.get === 'function' ? row.get('Numero do Voucher') : null) ||
       (typeof row.get === 'function' ? row.get('Número do Voucher') : null) ||
