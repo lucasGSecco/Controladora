@@ -108,11 +108,14 @@ async function createVoucher(session, params) {
 
     if (rawCode.length === 10) rawCode = `${rawCode.slice(0, 5)}-${rawCode.slice(5)}`;
     const diasLiberado = minutes ? Math.round(minutes / 1440) : null;
-
-    await appendVoucherRow({
-      nome, setor, funcao, numeroVoucher: rawCode,
-      dataLiberacao: formatDateBR(), responsavel, diasLiberado,
-    });
+    if (diasLiberado >= 30) {
+      await appendVoucherRow({
+        nome, setor, funcao, numeroVoucher: rawCode,
+        dataLiberacao: formatDateBR(), responsavel, diasLiberado,
+      });
+      
+    }
+    
   } catch (err) {
     console.error('Erro ao salvar voucher na planilha Google:', err.message);
   }

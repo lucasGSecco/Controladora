@@ -79,12 +79,21 @@ export function initVoucherForm({ formEl, feedbackEl, onSubmit }) {
 
     const submitBtn = formEl.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    feedbackEl.textContent = 'Gerando voucher e salvando na planilha...';
+    const isLessThan30Days = payload.minutes < 43200;
+    feedbackEl.textContent = isLessThan30Days
+      ? 'Gerando voucher...'
+      : 'Gerando voucher e salvando na planilha...';
+    
     feedbackEl.className = 'feedback';
 
-    try {
+try {
       await onSubmit(payload);
-      feedbackEl.textContent = 'Voucher(s) gerado(s) e registrado(s) na planilha com sucesso!';
+      const isLessThan30Days = payload.minutes < 43200;
+
+      feedbackEl.textContent = isLessThan30Days
+        ? 'Voucher gerado com sucesso!'
+        : 'Voucher(s) gerado(s) e registrado(s) na planilha com sucesso!';
+
       feedbackEl.className = 'feedback success';
       resetDefaults();
     } catch (err) {
