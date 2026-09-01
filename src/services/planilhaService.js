@@ -82,7 +82,6 @@ async function appendVoucherRow({
 }) {
   const sheet = await getSheet();
 
-  console.log("numero do Voucher:", numeroVoucher);
   
   await sheet.addRow({
     Nome: nome || '',
@@ -101,7 +100,6 @@ async function appendVoucherRow({
  */
 async function deleteVoucherRow(numeroVoucher) {
   if (!numeroVoucher) {
-    console.log('Nenhum número de voucher foi fornecido para exclusão.');
     return false;
   }
 
@@ -127,15 +125,7 @@ async function deleteVoucherRow(numeroVoucher) {
 
   if (targetRow) {
     await targetRow.delete();
-    console.log(`Voucher ${numeroVoucher} (normalizado: ${targetCode}) removido com sucesso.`);
     return true;
-  }
-
-  // LOG DE DEPURACÃO: Se não encontrar, exibe no terminal o que ele leu nas primeiras linhas
-  console.log(`Voucher ${numeroVoucher} (normalizado: ${targetCode}) NÃO foi encontrado na planilha.`);
-  if (rows.length > 0) {
-    console.log('Exemplo dos cabeçalhos/valores lidos na 1ª linha da planilha:');
-    console.log('row.toObject():', typeof rows[0].toObject === 'function' ? rows[0].toObject() : rows[0]);
   }
 
   return false;
